@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>고민상담 앱</title>
+  <style>
+    :root {
+      --bg: #f4f1ff;
+      --bg2: #fff8fc;
+      --card: rgba(255,255,255,0.92);
+      --line: rgba(255,255,255,0.55);
+      --text: #1f1b2d;
+      --muted: #736d86;
+      --accent: #6d5dfc;
+      --accent2: #b35cff;
+      --accent3: #ff7ac6;
+      --shadow: 0 20px 40px rgba(109, 93, 252, 0.16);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, #ede9ff 0%, transparent 35%),
+        radial-gradient(circle at top right, #ffd9ef 0%, transparent 28%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .splash-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 24%),
+        radial-gradient(circle at 80% 18%, rgba(255,255,255,0.14), transparent 20%),
+        radial-gradient(circle at 50% 85%, rgba(255,255,255,0.1), transparent 28%),
+        linear-gradient(145deg, #5b4ff6 0%, #8a5dff 45%, #ff72bd 100%);
+      transition: opacity .45s ease, visibility .45s ease;
+    }
+
+    .splash-screen.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-inner {
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      color: white;
+      position: relative;
+    }
+
+    .splash-orb {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(6px);
+      opacity: .32;
+      animation: floatOrb 3.8s ease-in-out infinite;
+    }
+
+    .orb1 { width: 92px; height: 92px; background: rgba(255,255,255,.28); top: -18px; left: 10px; }
+    .orb2 { width: 70px; height: 70px; background: rgba(255,255,255,.18); top: 24px; right: 12px; animation-delay: .7s; }
+    .orb3 { width: 120px; height: 120px; background: rgba(255,255,255,.12); bottom: 40px; left: 50%; transform: translateX(-50%); animation-delay: 1.2s; }
+
+    .splash-logo {
+      width: 108px;
+      height: 108px;
+      margin: 0 auto 22px;
+      border-radius: 30px;
+      background: rgba(255,255,255,0.16);
+      border: 1px solid rgba(255,255,255,0.22);
+      backdrop-filter: blur(14px);
+      box-shadow:
+        0 18px 40px rgba(45, 17, 111, 0.28),
+        inset 0 1px 0 rgba(255,255,255,0.28);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: logoPop .9s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .splash-title {
+      margin: 0;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      animation: fadeUp .8s ease both;
+      animation-delay: .15s;
+    }
+
+    .splash-subtitle {
+      margin: 10px 0 0;
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255,255,255,.9);
+      animation: fadeUp .8s ease both;
+      animation-delay: .28s;
+    }
+
+    .splash-loader {
+      width: 180px;
+      max-width: 75vw;
+      height: 6px;
+      margin: 24px auto 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.22);
+      overflow: hidden;
+      animation: fadeUp .8s ease both;
+      animation-delay: .4s;
+    }
+
+    .splash-loader > span {
+      display: block;
+      width: 42%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(255,255,255,.55), rgba(255,255,255,1));
+      animation: loading 1.35s ease-in-out infinite;
+    }
+
+    .splash-mini {
+      font-size: 12px;
+      color: rgba(255,255,255,.82);
+      letter-spacing: .02em;
+      animation: fadeUp .8s ease both;
+      animation-delay: .52s;
+    }
+
+    .app {
+      max-width: 430px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: env(safe-area-inset-top) 16px calc(28px + env(safe-area-inset-bottom));
+      position: relative;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .45s ease, transform .45s ease;
+    }
+
+    .app.ready {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .phone-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .topbar {
+      padding-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .hero {
+      padding: 10px 4px 4px;
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, rgba(109,93,252,0.96), rgba(179,92,255,0.92) 58%, rgba(255,122,198,0.9));
+      color: white;
+      border-radius: 28px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      width: 160px;
+      height: 160px;
+      right: -42px;
+      top: -46px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.12);
+    }
+
+    .hero-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .app-icon {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+      flex-shrink: 0;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 27px;
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.9);
+      position: relative;
+      z-index: 1;
+    }
+
+    .screen {
+      background: var(--card);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+      border-radius: 28px;
+      box-shadow: 0 14px 34px rgba(34, 27, 68, 0.08);
+      padding: 16px;
+    }
+
+    .screen h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      letter-spacing: -0.03em;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 2px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(109,93,252,0.08);
+      color: var(--accent);
+    }
+
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .field label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #433c58;
+      padding-left: 2px;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid #e8e2f5;
+      background: rgba(255,255,255,0.92);
+      border-radius: 16px;
+      padding: 14px 14px;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: .15s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: #b9abff;
+      box-shadow: 0 0 0 4px rgba(109,93,252,0.09);
+      transform: translateY(-1px);
+    }
+
+    .subcard {
+      background: linear-gradient(180deg, rgba(247,244,255,0.96), rgba(255,255,255,0.9));
+      border: 1px solid #eee8fb;
+      border-radius: 20px;
+      padding: 12px;
+    }
+
+    .subcard-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 18px;
+      padding: 17px 18px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2) 60%, var(--accent3));
+      color: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      box-shadow: 0 16px 28px rgba(130, 98, 255, 0.28);
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+      margin-top: 2px;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: scale(0.99); }
+
+    .result-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255,122,198,0.12);
+      color: #c5488f;
+      white-space: nowrap;
+    }
+
+    .result-box {
+      background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,244,255,0.95));
+      border: 1px solid #ece5fb;
+      border-radius: 22px;
+      padding: 14px;
+      min-height: 260px;
+    }
+
+    .placeholder {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .result-section {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid #f0ebfb;
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .result-section:last-child { margin-bottom: 0; }
+    .result-section h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .result-section p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.75;
+      color: #2e2940;
+    }
+
+    .bottom-nav {
+      position: sticky;
+      bottom: max(10px, env(safe-area-inset-bottom));
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: 0 12px 24px rgba(57, 43, 96, 0.08);
+      border-radius: 22px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      margin-top: auto;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .nav-item.active { color: var(--accent); font-weight: 800; }
+
+    @keyframes loading {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(320%); }
+    }
+
+    @keyframes logoPop {
+      0% { opacity: 0; transform: scale(.82) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes floatOrb {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    @media (max-width: 370px) {
+      .row-2, .grid-2 { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 24px; }
+      .splash-title { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="splash-screen" id="splashScreen">
+    <div class="splash-inner">
+      <div class="splash-orb orb1"></div>
+      <div class="splash-orb orb2"></div>
+      <div class="splash-orb orb3"></div>
+      <div class="splash-logo">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 3C7.02944 3 3 6.58172 3 11C3 13.0913 3.90194 14.9951 5.37868 16.4229C5.21798 17.7097 4.70584 18.8771 3.94118 19.8235C5.53034 19.7485 7.06238 19.2045 8.35294 18.2647C9.47335 18.7395 10.7082 19 12 19C16.9706 19 21 15.4183 21 11C21 6.58172 16.9706 3 12 3Z" fill="white" fill-opacity="0.96"/>
+          <path d="M9 11.25C9.41421 11.25 9.75 10.9142 9.75 10.5C9.75 10.0858 9.41421 9.75 9 9.75C8.58579 9.75 8.25 10.0858 8.25 10.5C8.25 10.9142 8.58579 11.25 9 11.25Z" fill="#7C3AED"/>
+          <path d="M12 11.25C12.4142 11.25 12.75 10.9142 12.75 10.5C12.75 10.0858 12.4142 9.75 12 9.75C11.5858 9.75 11.25 10.0858 11.25 10.5C11.25 10.9142 11.5858 11.25 12 11.25Z" fill="#7C3AED"/>
+          <path d="M15 11.25C15.4142 11.25 15.75 10.9142 15.75 10.5C15.75 10.0858 15.4142 9.75 15 9.75C14.5858 9.75 14.25 10.0858 14.25 10.5C14.25 10.9142 14.5858 11.25 15 11.25Z" fill="#7C3AED"/>
+          <path d="M9 13.5C9.75758 14.2096 10.7758 14.625 12 14.625C13.2242 14.625 14.2424 14.2096 15 13.5" stroke="#7C3AED" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h1 class="splash-title">고민상담 앱</h1>
+      <p class="splash-subtitle">당신의 취향을 읽고<br>위트 있게 해법을 정리하는 중</p>
+      <div class="splash-loader"><span></span></div>
+      <div class="splash-mini">Launching witty counselor...</div>
+    </div>
+  </div>
+  <div class="app" id="appRoot">
+    <div class="phone-shell">
+      <div class="topbar">
+        <span>모바일 고민상담</span>
+        <span>오늘도 잘 버티는 중</span>
+      </div>
+
+      <div class="hero">
+        <div class="hero-card">
+          <div class="hero-row">
+            <div class="app-icon">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M12 3C7.02944 3 3 6.58172 3 11C3 13.0913 3.90194 14.9951 5.37868 16.4229C5.21798 17.7097 4.70584 18.8771 3.94118 19.8235C5.53034 19.7485 7.06238 19.2045 8.35294 18.2647C9.47335 18.7395 10.7082 19 12 19C16.9706 19 21 15.4183 21 11C21 6.58172 16.9706 3 12 3Z" fill="white" fill-opacity="0.96"/>
+                <path d="M9 11.25C9.41421 11.25 9.75 10.9142 9.75 10.5C9.75 10.0858 9.41421 9.75 9 9.75C8.58579 9.75 8.25 10.0858 8.25 10.5C8.25 10.9142 8.58579 11.25 9 11.25Z" fill="#7C3AED"/>
+                <path d="M12 11.25C12.4142 11.25 12.75 10.9142 12.75 10.5C12.75 10.0858 12.4142 9.75 12 9.75C11.5858 9.75 11.25 10.0858 11.25 10.5C11.25 10.9142 11.5858 11.25 12 11.25Z" fill="#7C3AED"/>
+                <path d="M15 11.25C15.4142 11.25 15.75 10.9142 15.75 10.5C15.75 10.0858 15.4142 9.75 15 9.75C14.5858 9.75 14.25 10.0858 14.25 10.5C14.25 10.9142 14.5858 11.25 15 11.25Z" fill="#7C3AED"/>
+                <path d="M9 13.5C9.75758 14.2096 10.7758 14.625 12 14.625C13.2242 14.625 14.2424 14.2096 15 13.5" stroke="#7C3AED" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <h1>고민상담 앱</h1>
+              <div class="pill-row">
+                <span class="pill">취향 반영</span>
+                <span class="pill">위트 있는 조언</span>
+              </div>
+            </div>
+          </div>
+          <p>MBTI, 나이, 성별, 형제관계, 좋아하는 것과 싫어하는 것, 그리고 한 줄 고민을 넣으면 모바일 앱처럼 결과가 아래에 딱 정리됩니다.</p>
+        </div>
+      </div>
+
+      <section class="screen">
+        <h2>입력하기</h2>
+        <div class="form">
+          <div class="row-2">
+            <div class="field">
+              <label for="mbti">MBTI</label>
+              <input id="mbti" type="text" placeholder="예: INFP" maxlength="4" />
+            </div>
+            <div class="field">
+              <label for="age">나이</label>
+              <input id="age" type="number" placeholder="예: 16" min="1" max="120" />
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div class="field">
+              <label for="gender">성별</label>
+              <select id="gender">
+                <option value="">선택</option>
+                <option>여성</option>
+                <option>남성</option>
+                <option>논바이너리</option>
+                <option>응답하지 않음</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="siblings">형제관계</label>
+              <input id="siblings" type="text" placeholder="예: 첫째, 둘째, 외동" />
+            </div>
+          </div>
+
+          <div class="subcard">
+            <div class="subcard-title">💜 좋아하는 것 4가지</div>
+            <div class="grid-2">
+              <input class="like" type="text" placeholder="좋아하는 것 1" />
+              <input class="like" type="text" placeholder="좋아하는 것 2" />
+              <input class="like" type="text" placeholder="좋아하는 것 3" />
+              <input class="like" type="text" placeholder="좋아하는 것 4" />
+            </div>
+          </div>
+
+          <div class="subcard">
+            <div class="subcard-title">🖤 싫어하는 것 4가지</div>
+            <div class="grid-2">
+              <input class="dislike" type="text" placeholder="싫어하는 것 1" />
+              <input class="dislike" type="text" placeholder="싫어하는 것 2" />
+              <input class="dislike" type="text" placeholder="싫어하는 것 3" />
+              <input class="dislike" type="text" placeholder="싫어하는 것 4" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="worry">고민 1줄</label>
+            <input id="worry" type="text" placeholder="예: 해야 할 일은 많은데 자꾸 미루게 돼요" maxlength="120" />
+          </div>
+
+          <button id="startBtn">고민 상담 시작</button>
+        </div>
+      </section>
+
+      <section class="screen">
+        <div class="result-top">
+          <h2 style="margin:0;">상담 결과</h2>
+          <span class="badge">앱 스타일 요약</span>
+        </div>
+        <div id="result" class="result-box">
+          <div class="placeholder">버튼을 누르면 여기에 결과가 나옵니다.
+
+1. 내 고민 정의
+2. 진짜 문제가 뭐냐
+3. 앞으로 해법</div>
+        </div>
+      </section>
+
+      <div class="bottom-nav">
+        <div class="nav-item active">
+          <span>🏠</span>
+          <span>홈</span>
+        </div>
+        <div class="nav-item">
+          <span>✨</span>
+          <span>상담</span>
+        </div>
+        <div class="nav-item">
+          <span>💬</span>
+          <span>기록</span>
+        </div>
+        <div class="nav-item">
+          <span>⚙️</span>
+          <span>설정</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => [...document.querySelectorAll(sel)];
+
+    function pick(arr, fallback = "") {
+      const filtered = arr.filter(Boolean);
+      return filtered.length ? filtered[Math.floor(Math.random() * filtered.length)] : fallback;
+    }
+
+    function getMbtiTone(mbti) {
+      const key = (mbti || "").toUpperCase();
+      if (!key || key.length !== 4) return "당신은 상황을 그냥 넘기기보다 한 번 자기만의 방식으로 해석해보는 타입 같아요.";
+      const map = {
+        INTP: "머릿속 회의는 이미 세 번 끝났는데 몸이 아직 출근을 안 한 타입 같아요.",
+        INTJ: "문제 자체보다 시스템 오류를 먼저 찾아내는 전략형 분위기가 있어요.",
+        INFP: "마음의 진정성을 소중히 여기는데 현실이 자꾸 엑셀처럼 굴 때 스트레스를 받는 편 같아요.",
+        INFJ: "사람과 의미를 깊게 보는데, 혼자 다 떠안는 순간 배터리가 빨리 닳는 타입 같아요.",
+        ISTJ: "해야 할 일은 해야 한다고 생각하지만, 납득 안 되면 속으로 조용히 화나는 스타일 같아요.",
+        ISFJ: "주변을 챙기다가 정작 자기 마음은 뒤늦게 확인하는 편 같아요.",
+        ISTP: "문제는 고치면 된다고 보는데, 감정 문제는 드라이버로 안 풀려서 답답한 타입 같아요.",
+        ISFP: "억지로 몰아붙이는 방식보다 자기 리듬이 살아야 힘이 나는 스타일 같아요.",
+        ENTP: "아이디어는 불꽃놀이처럼 터지는데 꾸준함은 가끔 로그아웃되는 타입 같아요.",
+        ENTJ: "목표가 보이면 달리는데, 감정까지 일정표에 넣으려다 피곤해지는 타입 같아요.",
+        ENFP: "의욕은 큰데 마음이 동의하지 않으면 엔진이 공회전하는 스타일 같아요.",
+        ENFJ: "사람을 살피는 능력은 좋은데 자기 부담을 과소평가할 때가 있어 보여요.",
+        ESTP: "일단 해보자는 추진력은 좋은데 반복되는 답답함엔 급격히 지루해지는 편 같아요.",
+        ESTJ: "정리와 실행은 강한데, 엉성한 상황을 보면 정신 건강이 살짝 흔들릴 수 있어요.",
+        ESFP: "재미와 생동감이 있어야 집중이 붙는 타입이라 재미 없는 문제에 유독 약할 수 있어요.",
+        ESFJ: "관계의 온도를 잘 보지만 남 기대를 너무 성실하게 감당할 때가 있어요."
+      };
+      return map[key] || "당신은 상황을 그냥 넘기기보다 한 번 자기만의 방식으로 해석해보는 타입 같아요.";
+    }
+
+    function buildWittyLine(likes, dislikes) {
+      const like = pick(likes, "좋아하는 것");
+      const dislike = pick(dislikes, "싫어하는 것");
+      const templates = [
+        `지금 이 고민은 마치 ${like}는 좋아하지만 ${dislike}는 절대 원치 않는 마음의 줄다리기 같아요.`,
+        `한마디로, 당신의 뇌는 ${like} 모드로 살고 싶은데 현실은 ${dislike} 특집전을 열고 있는 셈이에요.`,
+        `이 상황은 ${like} 한 스푼과 ${dislike} 네 스푼이 섞인, 썩 유쾌하지 않은 인생 레시피에 가깝습니다.`
+      ];
+      return pick(templates);
+    }
+
+    function buildDefinition(data) {
+      return `${data.worry} 이 고민의 핵심은 단순히 기분이 별로인 상태가 아니라, 내가 원하는 방향과 지금의 행동 또는 환경이 어긋나 있다는 데 있어요. ${getMbtiTone(data.mbti)} ${buildWittyLine(data.likes, data.dislikes)}`;
+    }
+
+    function buildRealProblem(data) {
+      const ageLine = data.age ? `${data.age}살이라는 시기 특성상, 감정은 빠르게 커지는데 정리 기술은 아직 실전 업그레이드 중일 수 있어요.` : "지금은 감정과 현실을 동시에 다루는 기술이 필요한 시기예요.";
+      const siblingLine = data.siblings ? `또 ${data.siblings}라는 위치에서는 비교, 책임감, 눈치, 독립심 같은 요소가 은근히 섞여 들어오기 쉽습니다.` : "가족 안에서의 역할도 생각보다 큰 영향을 줘요.";
+      const dislike = pick(data.dislikes, "답답한 분위기");
+      const like = pick(data.likes, "좋아하는 일");
+      return `진짜 문제는 고민 자체보다, 그 고민을 다루는 방식이 현재의 나와 잘 맞지 않는다는 점이에요. ${ageLine} ${siblingLine} 특히 당신은 ${like}처럼 에너지가 오르는 요소가 있어야 움직이는데, 현실은 ${dislike}처럼 힘 빠지는 방식으로 굴러가고 있을 가능성이 큽니다. 즉, 의지 부족보다는 구조 미스에 더 가까워요.`;
+    }
+
+    function buildSolutions(data) {
+      const like1 = data.likes[0] || "좋아하는 요소";
+      const like2 = data.likes[1] || "재미";
+      const dislike1 = data.dislikes[0] || "지루함";
+      const genderLine = data.gender ? `${data.gender}으로서 기대되는 모습까지 얹혀 있었다면, 그 기준은 잠깐 내려놔도 됩니다.` : "남이 기대하는 모습보다 지금 실제로 작동하는 방식을 찾는 게 먼저예요.";
+      return `첫째, 고민을 감정으로만 보지 말고 행동 단위로 쪼개세요. 오늘 당장 할 수 있는 가장 작은 1단계를 정하면 시작 장벽이 확 내려갑니다.<br><br>둘째, ${like1}와 ${like2}처럼 당신이 좋아하는 요소를 해결 과정에 끼워 넣으세요. 사람은 로봇이 아니라서, 마음이 붙는 방식일수록 오래 갑니다.<br><br>셋째, ${dislike1}처럼 싫어하는 요소는 가능한 한 초반부터 줄이세요. 의지만 믿지 말고 환경을 바꾸는 게 훨씬 현실적입니다.<br><br>마지막으로, ${genderLine} 당신의 목표는 완벽한 사람 되기가 아니라, 내 방식으로 문제를 한 칸씩 줄여가는 사람 되기예요. 진짜 해법은 대단한 결심보다 반복 가능한 작은 승리입니다.`;
+    }
+
+    function renderResult(data) {
+      const html = `
+        <div class="result-section">
+          <h3>1. 내 고민 정의</h3>
+          <p>${buildDefinition(data)}</p>
+        </div>
+        <div class="result-section">
+          <h3>2. 진짜 문제가 뭐냐</h3>
+          <p>${buildRealProblem(data)}</p>
+        </div>
+        <div class="result-section">
+          <h3>3. 앞으로 해법</h3>
+          <p>${buildSolutions(data)}</p>
+        </div>
+      `;
+      $("#result").innerHTML = html;
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+
+    function hideSplash() {
+      const splash = $("#splashScreen");
+      const app = $("#appRoot");
+      if (!splash || !app) return;
+      splash.classList.add("hide");
+      app.classList.add("ready");
+    }
+
+    window.addEventListener("load", () => {
+      setTimeout(hideSplash, 1700);
+    });
+
+    $("#startBtn").addEventListener("click", () => {
+      const data = {
+        mbti: $("#mbti").value.trim(),
+        age: $("#age").value.trim(),
+        gender: $("#gender").value,
+        siblings: $("#siblings").value.trim(),
+        likes: $$(".like").map(el => el.value.trim()).filter(Boolean),
+        dislikes: $$(".dislike").map(el => el.value.trim()).filter(Boolean),
+        worry: $("#worry").value.trim()
+      };
+
+      if (!data.worry) {
+        alert("고민 1줄은 꼭 입력해주세요.");
+        $("#worry").focus();
+        return;
+      }
+
+      renderResult(data);
+    });
+  </script>
+</body>
+</html>
